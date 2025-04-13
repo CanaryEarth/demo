@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!-- By Constantin Bucataru at Breathable Universe Resilient Design, April 13th, 2025. Do no copy, imbed or alter anything below this message without written authorisation. Thank you. -->
+<html lang="en">
+	<head>
+		<link rel="icon" href="burd_fav.png">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<title>Image to Binary</title>
+		<style>
+			.controls,.preview,.settings,.slider-container,body{display:flex}html{box-sizing:border-box;overflow-x:hidden}*,::after,::before{box-sizing:inherit}body{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;background:#55555526}.container{width:100dvh;max-width:900px;min-height:400px;min-width:300px;margin:0 auto;padding:24px;background-color:#fff;border-radius:16px;box-shadow:0 0 10px 10px rgba(0,0,0,.1)}.controls{justify-content:space-evenly;align-items:self-end;margin-bottom:20px}.left-group,.right-group{display:flex;flex-direction:column;align-items:center}.preview{position:relative;flex-wrap:nowrap;gap:16px;width:100%;justify-content:center;align-items:center}canvas{width:100%;max-width:800px;height:auto;aspect-ratio:800/480;flex:1;box-shadow:0 0 10px 9px rgba(0,0,0,.05);background-image:linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.7)),url("polaroid_bird.png");background-size:40%;background-repeat:no-repeat;background-position:center}.slider-container{position:absolute;top:0;right:-10px;bottom:0;width:20px;align-items:center;flex:none;background:linear-gradient(to top,#fff,#000);border:1px solid #333;border-radius:8px;touch-action:none}.slider{-webkit-appearance:none;appearance:none;writing-mode:vertical-lr;direction:rtl;width:18px;height:100%;transform:translate(-2px,0);background:0 0;border-radius:6px;outline:0;transition:opacity .2s}.slider::-webkit-slider-runnable-track{width:20px;height:100%;border-radius:8px}.slider::-moz-range-track{width:20px;height:100%;border-radius:8px}.slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;background-color:transparent;border:none;border-radius:50%;cursor:pointer}.slider::-moz-range-thumb{width:20px;height:20px;background-color:transparent;border:none;border-radius:50%;cursor:pointer}#slider-value{position:absolute;width:5ch;background-color:#333;border-radius:4px;color:#fff;font-family:monospace;font-size:16px;text-align:center;white-space:nowrap;pointer-events:none;transform:translate(-50%,-46%)}#status_message{display:none;text-align:center}.file-input label,button{display:inline-block;padding:10px;margin-bottom:20px;border:1px solid #33333329;border-radius:8px;background:#55555526;color:#221f1f;font-size:18px;font-weight:500;text-align:center;cursor:pointer;transition:.2s;box-shadow:5px 5px 4px 0 rgba(0,0,0,.3)}button:disabled{background:#999;border-color:#666;color:#ccc;opacity:.7;cursor:not-allowed}.file-input label:hover,button:hover:not(:disabled){background:#333333a3;color:#fff}.file-input label:active,button:active:not(:disabled){transform:translateY(2px);box-shadow:none}.file-input input[type=file]{display:none}.settings input[type=radio]{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin:0 4px 0 0;border:2px solid #333;border-radius:50%;background:#fff;cursor:pointer;transition:.2s}.settings input[type=radio]:checked{background:#333;border-color:#000}.settings input[type=radio]:hover{border-color:#000}.settings{align-items:center;gap:6px;font-size:16px;color:#333}.settings label{cursor:pointer}@media (max-width:600px){.container,body{padding:10px}.container{width:100%}.preview{position:static;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:24px}#slider-value{transform:rotate(90deg) translate(-10px,26px)}.slider-container{position:relative;right:0;top:14px;width:100%;height:20px;background:linear-gradient(to right,#fff,#000);border:1px solid #333;border-radius:8px}.slider{writing-mode:horizontal-tb;direction:ltr;width:100%;height:20px;transform:translate(1px,0) scaleX(1.019)}.slider::-webkit-slider-runnable-track{width:100%;height:20px;border:1px solid #333}.slider::-moz-range-track{width:100%;height:20px}}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="controls">
+				<div class="left-group">
+					<div class="file-input">
+						<input type="file" id="file-input" accept="image/*">
+						<label for="file-input">Select Image</label>
+					</div>
+					<div class="settings">
+						<label><input type="radio" name="scaling" value="fit"> Fit (may leave bars)</label>
+						<label><input type="radio" name="scaling" value="fill" checked> Fill (may crop image)</label>
+					</div>
+				</div>
+				<div class="right-group">
+					<div><button id="download-button" disabled>Upload to Canary</button></div>
+					<!-- You're viewing this on demo.canary.earth, so obviously a Canary won't be connected. -->
+					<!-- Also, since you're here, consider applying for a job by filling out the form at canary.earth. -->
+					<div id="status_message">⚠ Canary not detected.</div>
+				</div>
+			</div>
+			<div class="preview">
+				<canvas id="preview-canvas" width="800" height="480"></canvas>
+				<div class="slider-container">
+					<input type="range" id="threshold-slider" min="0" max="255" value="166" class="slider">
+					<span id="slider-value"></span>
+				</div>
+			</div>
+		</div>
+		<script>
+			const fileInput=document.getElementById("file-input"),thresholdSlider=document.getElementById("threshold-slider"),previewCanvas=document.getElementById("preview-canvas"),downloadButton=document.getElementById("download-button");let image=null,scalingMode="fill";const CANVAS_WIDTH=800,CANVAS_HEIGHT=480;function dithering(e,t,a,l){let n=[],i=[],d=[];for(let r=0;r<256;r++)n[r]=.299*r,i[r]=.587*r,d[r]=.114*r;let o=e.getImageData(0,0,t,a),g=o.data;for(let h=0;h<g.length;h+=4)g[h]=Math.floor(n[g[h]]+i[g[h+1]]+d[g[h+2]]);for(let $=0;$<g.length;$+=4){let s=g[$]<l?0:255,m=Math.floor((g[$]-s)/8);g[$]=s,$+4<g.length&&(g[$+4]+=m),$+8<g.length&&(g[$+8]+=m),$+4*t-4<g.length&&(g[$+4*t-4]+=m),$+4*t<g.length&&(g[$+4*t]+=m),$+4*t+4<g.length&&(g[$+4*t+4]+=m),$+8*t<g.length&&(g[$+8*t]+=m),g[$+1]=g[$+2]=g[$]}e.putImageData(o,0,0)}function drawImage(){if(!image)return;let e=previewCanvas.getContext("2d");e.clearRect(0,0,800,480);let t=image.width/image.height;if("fit"===scalingMode){let a,l;t>800/480?(a=800,l=800/t):(l=480,a=480*t);let n=(800-a)/2,i=(480-l)/2;e.drawImage(image,0,0,image.width,image.height,n,i,a,l)}else if("fill"===scalingMode){let d=Math.max(800/image.width,480/image.height),r=image.width*d,o=image.height*d;e.drawImage(image,0,0,image.width,image.height,(800-r)/2,(480-o)/2,r,o)}let g=parseInt(thresholdSlider.value);dithering(e,800,480,g)}function invertImageData(e){for(let t=0;t<e.length;t+=4)e[t]=255-e[t],e[t+1]=255-e[t+1],e[t+2]=255-e[t+2]}function canvasToByteArray(e){let t=e.getContext("2d"),a=t.getImageData(0,0,e.width,e.height),l=a.data;invertImageData(l);let n=[],i=0,d=7;for(let r=0;r<l.length;r+=4)255===l[r]&&(i|=1<<d),--d<0&&(n.push(i),i=0,d=7);return d<7&&n.push(i),n}function generateRandomFilename(){let e="ABCDEFGHIJKLMNOPQRSTUVWXYZ",t="";for(let a=0;a<6;a++)t+=e.charAt(Math.floor(Math.random()*e.length));return`${t}_800x480.bin`}function updateSliderValue(){let e=thresholdSlider.value,t=parseInt(thresholdSlider.min),a=parseInt(thresholdSlider.max),l=(e-t)/(a-t),n=document.getElementById("slider-value");n.textContent=e;let i=thresholdSlider.getBoundingClientRect();if(window.matchMedia("(max-width: 600px)").matches){let d=l*i.width;n.style.left=`${d}px`,n.style.top="50%",thresholdSlider.style.background=`linear-gradient(to right, transparent ${100*l}%, white ${100*l}%)`}else{let r=(1-l)*i.height;n.style.top=`${r}px`,n.style.left="50%",thresholdSlider.style.background=`linear-gradient(to top, transparent ${100*l}%, white ${100*l}%)`}}fileInput.addEventListener("change",e=>{let t=e.target.files[0];if(t){let a=new FileReader;a.onload=e=>{(image=new Image).onload=drawImage,image.src=e.target.result},a.readAsDataURL(t),downloadButton.disabled=!1,downloadButton.innerText="Download Binary",document.getElementById("status_message").style.display="block"}}),thresholdSlider.addEventListener("input",drawImage),document.querySelectorAll('input[name="scaling"]').forEach(e=>{e.addEventListener("change",e=>{scalingMode=e.target.value,drawImage()})}),downloadButton.addEventListener("click",()=>{let e=canvasToByteArray(previewCanvas),t=new Blob([new Uint8Array(e)],{type:"application/octet-stream"}),a=URL.createObjectURL(t),l=document.createElement("a");l.href=a,l.download=generateRandomFilename(),l.click(),URL.revokeObjectURL(a)}),thresholdSlider.addEventListener("input",updateSliderValue),window.addEventListener("resize",updateSliderValue),updateSliderValue();
+		</script>
+	</body>
+</html>
